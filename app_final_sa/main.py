@@ -25,7 +25,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(
     title="InternalDesk API",
     version="1.0.0-lab",
-    description="API interna de gestión de tickets para laboratorio de Seguridad en Aplicaciones",
+    description="API interna de gestión de tickets para tarea final de Seguridad en Aplicaciones",
     lifespan=lifespan,
 )
 
