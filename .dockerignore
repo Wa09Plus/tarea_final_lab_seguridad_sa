@@ -1,0 +1,10 @@
+.venv
+__pycache__
+*.pyc
+internaldesk.db
+evidencia
+tests
+infra
+policy
+security
+.git

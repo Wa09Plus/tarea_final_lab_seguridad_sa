@@ -1,0 +1,7 @@
+{
+    "service": "internaldesk-api",
+    "environment": "staging",
+    "run_as_root": true,
+    "debug_mode": true,
+    "allow_public_admin": false
+}
