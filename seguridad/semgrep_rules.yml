@@ -1,0 +1,21 @@
+rules:
+  - id: internaldesk-sqlite-sqli-fstring
+    languages: [python]
+    severity: ERROR
+    message: >
+      Posible SQL Injection: se construyó una consulta SQL mediante f-string o
+      concatenación antes de pasarla a .execute(). Utilice consultas parametrizadas (?).
+    metadata:
+      category: security
+      cwe: "CWE-89: Improper Neutralization of Special Elements used in an SQL Command"
+      owasp: "A03:2021 - Injection"
+      references:
+        - "OWASP ASVS 5.0"
+    pattern-either:
+      - pattern: $CONN.execute(f"...", ...)
+      - patterns:
+          - pattern: |
+              $QUERY = f"..."
+              ...
+              $CONN.execute($QUERY)
+      - pattern: $CONN.execute($A + $B)
