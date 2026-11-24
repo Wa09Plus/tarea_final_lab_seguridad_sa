@@ -1,5 +1,6 @@
 rules:
   - id: internaldesk-sqlite-sqli-fstring
+    mode: taint
     languages: [python]
     severity: ERROR
     message: >
@@ -11,11 +12,10 @@ rules:
       owasp: "A03:2021 - Injection"
       references:
         - "OWASP ASVS 5.0"
-    pattern-either:
-      - pattern: $CONN.execute(f"...", ...)
+    pattern-sources:
+      - pattern: f"..."
+      - pattern: $A + $B
+    pattern-sinks:
       - patterns:
-          - pattern: |
-              $QUERY = f"..."
-              ...
-              $CONN.execute($QUERY)
-      - pattern: $CONN.execute($A + $B)
+          - pattern: $CONN.execute($SQL, ...)
+          - focus-metavariable: $SQL
