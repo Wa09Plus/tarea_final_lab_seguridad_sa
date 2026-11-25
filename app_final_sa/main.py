@@ -125,20 +125,17 @@ def search_tickets(
     q: str = Query(..., min_length=1),
     current_user: dict = Depends(get_current_user),
 ):
-    """
-    DEFECTO CONTROLADO #2 (SQL Injection - versión inicial de laboratorio):
-    Interpolación directa del parámetro `q` en la consulta SQL.
-    """
+    """Busca tickets propios del usuario autenticado usando consulta SQL parametrizada."""
     req_id = request.state.request_id
+    escaped_q = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     conn = get_connection()
     try:
         query = (
-            f"SELECT id, owner_id, title, description, priority, status "
-            f"FROM tickets WHERE owner_id = {current_user['id']} "
-            f"AND title LIKE '%{q}%'"
+            "SELECT id, owner_id, title, description, priority, status "
+            "FROM tickets WHERE owner_id = ? AND title LIKE ? ESCAPE '\\'"
         )
-        logger.info("[TRACE][%s] DB_QUERY -> search_tickets raw_sql_executed", req_id)
-        rows = conn.execute(query).fetchall()
+        rows = conn.execute(query, (current_user["id"], f"%{escaped_q}%")).fetchall()
+        logger.info("[TRACE][%s] DB_QUERY -> search_tickets count=%d", req_id, len(rows))
         return [dict(r) for r in rows]
     finally:
         conn.close()
@@ -150,10 +147,7 @@ def get_ticket_by_id(
     request: Request,
     current_user: dict = Depends(get_current_user),
 ):
-    """
-    DEFECTO CONTROLADO #1 (BOLA / IDOR - versión inicial de laboratorio):
-    Valida autenticación (JWT), pero omite verificar propiedad del recurso.
-    """
+    """Obtiene un ticket por ID verificando que pertenezca al usuario autenticado (prevención BOLA/IDOR)."""
     req_id = request.state.request_id
     conn = get_connection()
     try:
@@ -163,6 +157,18 @@ def get_ticket_by_id(
         ).fetchone()
         if not row:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket no encontrado")
+        if row["owner_id"] != current_user["id"]:
+            logger.warning(
+                "[TRACE][%s] AUTHZ_BOLA -> DENY (user_id=%s attempted ticket_id=%s owned by owner_id=%s)",
+                req_id,
+                current_user["id"],
+                ticket_id,
+                row["owner_id"],
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permiso para acceder a este ticket",
+            )
         logger.info(
             "[TRACE][%s] RESOURCE_ACCESS -> user_id=%s accessed ticket_id=%s (owner_id=%s)",
             req_id,
