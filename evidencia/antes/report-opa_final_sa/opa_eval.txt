@@ -1,0 +1,65 @@
+=== CASO PERMITIDO (input_allow.json) ===
+{
+  "result": [
+    {
+      "expressions": [
+        {
+          "value": [],
+          "text": "data.internaldesk.security.deny",
+          "location": {
+            "row": 1,
+            "col": 1
+          }
+        }
+      ]
+    }
+  ]
+}
+=== CASO DENEGADO (input_deny.json) ===
+{
+  "result": [
+    {
+      "expressions": [
+        {
+          "value": [
+            "POLITICA VIOLADA: el contenedor no debe ejecutarse como root (run_as_root=true).",
+            "POLITICA VIOLADA: el modo debug debe estar desactivado fuera de desarrollo (debug_mode=true)."
+          ],
+          "text": "data.internaldesk.security.deny",
+          "location": {
+            "row": 1,
+            "col": 1
+          }
+        }
+      ]
+    }
+  ]
+}
+{
+  "result": [
+    {
+      "expressions": [
+        {
+          "value": "POLITICA VIOLADA: el contenedor no debe ejecutarse como root (run_as_root=true).",
+          "text": "data.internaldesk.security.deny[_]",
+          "location": {
+            "row": 1,
+            "col": 1
+          }
+        }
+      ]
+    },
+    {
+      "expressions": [
+        {
+          "value": "POLITICA VIOLADA: el modo debug debe estar desactivado fuera de desarrollo (debug_mode=true).",
+          "text": "data.internaldesk.security.deny[_]",
+          "location": {
+            "row": 1,
+            "col": 1
+          }
+        }
+      ]
+    }
+  ]
+}

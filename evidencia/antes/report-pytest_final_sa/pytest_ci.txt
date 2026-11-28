@@ -1,0 +1,67 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- /opt/hostedtoolcache/Python/3.12.16/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/tarea_final_lab_seguridad_sa/tarea_final_lab_seguridad_sa
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.16.0
+collecting ... collected 7 items
+
+tests/test_security.py::test_legitimate_access_to_own_resource PASSED    [ 14%]
+tests/test_security.py::test_deny_access_to_other_user_resource_bola FAILED [ 28%]
+tests/test_security.py::test_unauthenticated_and_invalid_token_denied PASSED [ 42%]
+tests/test_security.py::test_unexpected_input_rejected PASSED            [ 57%]
+tests/test_security.py::test_role_restriction_on_admin_endpoint PASSED   [ 71%]
+tests/test_security.py::test_search_legitimate_query PASSED              [ 85%]
+tests/test_security.py::test_search_sqli_payload_blocked FAILED          [100%]
+
+=================================== FAILURES ===================================
+_________________ test_deny_access_to_other_user_resource_bola _________________
+
+client = <starlette.testclient.TestClient object at 0x7f0c5c037ad0>
+
+    def test_deny_access_to_other_user_resource_bola(client: TestClient):
+        """Entrada: usuario Sofia solicita ticket #3 perteneciente a Steve. Esperado: HTTP 403."""
+        headers = get_auth_header(client, "Sofia", "SofiaPass2026?")
+        resp = client.get("/tickets/3", headers=headers)
+>       assert resp.status_code == 403, (
+            f"BOLA/IDOR detectado: Sofia obtuvo HTTP {resp.status_code} "
+            f"al solicitar un recurso de Steve (esperado 403)."
+        )
+E       AssertionError: BOLA/IDOR detectado: Sofia obtuvo HTTP 200 al solicitar un recurso de Steve (esperado 403).
+E       assert 200 == 403
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_security.py:39: AssertionError
+_______________________ test_search_sqli_payload_blocked _______________________
+
+client = <starlette.testclient.TestClient object at 0x7f0c5c07e6c0>
+
+    def test_search_sqli_payload_blocked(client: TestClient):
+        """Entrada: Sofia envía payload SQLi `' OR 1=1 --`. Esperado: HTTP 200 sin exponer datos ajenos."""
+        headers = get_auth_header(client, "Sofia", "SofiaPass2026?")
+        resp = client.get("/tickets/search", params={"q": "' OR 1=1 --"}, headers=headers)
+        assert resp.status_code == 200
+        results = resp.json()
+>       assert all(ticket["owner_id"] == 1 for ticket in results), (
+            f"SQL Injection detectado: se devolvieron registros de otros usuarios: {results}"
+        )
+E       AssertionError: SQL Injection detectado: se devolvieron registros de otros usuarios: [{'id': 1, 'owner_id': 1, 'title': 'Falla en VPN corporativa', 'description': 'Error al conectar desde red externa', 'priority': 'high', 'status': 'open'}, {'id': 2, 'owner_id': 1, 'title': 'Solicitud de monitor', 'description': 'Reemplazo de pantalla en puesto 4B', 'priority': 'low', 'status': 'open'}, {'id': 3, 'owner_id': 2, 'title': 'Confidencial: ajuste salarial Q4', 'description': 'Expediente interno #9941 solo para RRHH/Steve', 'priority': 'high', 'status': 'open'}]
+E       assert False
+E        +  where False = all(<generator object test_search_sqli_payload_blocked.<locals>.<genexpr> at 0x7f0c5c239150>)
+
+tests/test_security.py:100: AssertionError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_security.py::test_deny_access_to_other_user_resource_bola - AssertionError: BOLA/IDOR detectado: Sofia obtuvo HTTP 200 al solicitar un recurso de Steve (esperado 403).
+assert 200 == 403
+ +  where 200 = <Response [200 OK]>.status_code
+FAILED tests/test_security.py::test_search_sqli_payload_blocked - AssertionError: SQL Injection detectado: se devolvieron registros de otros usuarios: [{'id': 1, 'owner_id': 1, 'title': 'Falla en VPN corporativa', 'description': 'Error al conectar desde red externa', 'priority': 'high', 'status': 'open'}, {'id': 2, 'owner_id': 1, 'title': 'Solicitud de monitor', 'description': 'Reemplazo de pantalla en puesto 4B', 'priority': 'low', 'status': 'open'}, {'id': 3, 'owner_id': 2, 'title': 'Confidencial: ajuste salarial Q4', 'description': 'Expediente interno #9941 solo para RRHH/Steve', 'priority': 'high', 'status': 'open'}]
+assert False
+ +  where False = all(<generator object test_search_sqli_payload_blocked.<locals>.<genexpr> at 0x7f0c5c239150>)
+==================== 2 failed, 5 passed, 1 warning in 0.96s ====================
